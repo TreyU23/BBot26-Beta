@@ -2,6 +2,7 @@ package frc.robot.Subsystems;
 
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
+import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.SoftwareLimitSwitchConfigs;
@@ -61,21 +62,26 @@ public class Intake extends SubsystemBase {
         return MathUtil.isNear(m_setPosition, getPosition(), IntakeConstants.kPositionTolerance);
     }
 
-    public void setPostion(double pose) {
-        m_setPosition = pose;
-        MathUtil.clamp(m_setPosition, IntakeConstants.kReverseLimit, IntakeConstants.kForwardLimit);
+    public void setPosition(double pose) {
+        m_setPosition = MathUtil.clamp(pose, IntakeConstants.kReverseLimit, IntakeConstants.kForwardLimit);
         m_arm.setControl(m_pvRequest.withPosition(m_setPosition));
     }
 
     public void setVoltage(double volts) {
-        m_setVoltage = volts;
-        if (atSetpoint())
+        if (atSetpoint()) {
+            m_setVoltage = volts;
             m_leftRoller.setVoltage(volts);
+        } else {
+            m_setVoltage = 0.0;
+            m_leftRoller.stopMotor();
+        }
     }
 
     public void stopRoller() {
+        // m_rightRoller mirrors m_leftRoller via a persistent Follower request set once in
+        // rollerConfigs(); commanding it directly here would overwrite that request and
+        // permanently break the follow relationship, so only the master needs to be stopped.
         m_leftRoller.stopMotor();
-        m_rightRoller.stopMotor();
     }
 
     public void stopArm() {
@@ -84,7 +90,7 @@ public class Intake extends SubsystemBase {
 
     public Command setIntake(double pose, double volts) {
         return runEnd(() -> {
-            setPostion(pose);
+            setPosition(pose);
             setVoltage(volts);
         }, () -> stopRoller());
     }
@@ -108,15 +114,21 @@ public class Intake extends SubsystemBase {
     }
 
     public void rollerConfigs() {
-        TalonFXConfigurator config = m_leftRoller.getConfigurator();
-
-        config.apply(new CurrentLimitsConfigs()
+        CurrentLimitsConfigs currentLimits = new CurrentLimitsConfigs()
                 .withStatorCurrentLimit(CurrentLimitConstants.kIntakeRollerStator)
                 .withSupplyCurrentLimit(CurrentLimitConstants.kIntakeRollerSupply)
                 .withStatorCurrentLimitEnable(true)
-                .withSupplyCurrentLimitEnable(true));
+                .withSupplyCurrentLimitEnable(true);
 
-        config.apply(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast));
+        MotorOutputConfigs neutralMode = new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast);
+
+        TalonFXConfigurator leftConfig = m_leftRoller.getConfigurator();
+        leftConfig.apply(currentLimits);
+        leftConfig.apply(neutralMode);
+
+        TalonFXConfigurator rightConfig = m_rightRoller.getConfigurator();
+        rightConfig.apply(currentLimits);
+        rightConfig.apply(neutralMode);
 
         m_rightRoller.setControl(new Follower(IntakeConstants.kLeftRollerID, IntakeConstants.kRollerAligned));
     }
@@ -144,5 +156,8 @@ public class Intake extends SubsystemBase {
                 .withKG(IntakeConstants.kG)
                 .withKV(IntakeConstants.kV)
                 .withGravityType(GravityTypeValue.Arm_Cosine));
+
+        config.apply(new FeedbackConfigs()
+                .withSensorToMechanismRatio(IntakeConstants.kGearRatio));
     }
 }

@@ -14,6 +14,8 @@ public class IntakeConstants {
 
     public static final double kPositionTolerance = 0.0;
 
+    public static final double kGearRatio = 1.0;
+
     public static final double kP = 0.0;
     public static final double kV = 0.0;
     public static final double kG = 0.0;
