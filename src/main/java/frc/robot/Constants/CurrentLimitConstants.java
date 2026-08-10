@@ -9,4 +9,10 @@ public class CurrentLimitConstants {
 
     public static final double kIntakeRollerStator = 0.0;
     public static final double kIntakeRollerSupply = 0.0;
+
+    public static final double kShooterHoodStator = 0.0;
+    public static final double kShooterHoodSupply = 0.0;
+
+    public static final double kShooterRollerStator = 0.0;
+    public static final double kShooterRollerSupply = 0.0;
 }
