@@ -46,7 +46,7 @@ public class Shooter extends SubsystemBase {
         return m_hood.getStatorCurrent().getValueAsDouble();
     }
 
-    public double getHoodSupplyCurent() {
+    public double getHoodSupplyCurrent() {
         return m_hood.getSupplyCurrent().getValueAsDouble();
     }
 
@@ -60,17 +60,19 @@ public class Shooter extends SubsystemBase {
 
     public void allowHood(boolean allowHood) {
         m_allowHood = allowHood;
-        if (!m_allowHood) {
+        if (!m_allowHood)
             setPosition(0.0);
-        }
     }
 
     public void setPosition(double pose) {
-        m_setPosition 
-            = MathUtil.clamp(pose, ShooterConstants.Hood.kReverseLimit, ShooterConstants.Hood.kForwardLimit);
+        if (m_allowHood) {
+            m_setPosition 
+                = MathUtil.clamp(pose, ShooterConstants.Hood.kReverseLimit, ShooterConstants.Hood.kForwardLimit);
+        } else {
+            m_setPosition = 0.0;
+        }
 
-        if (m_allowHood)
-            m_hood.setControl(m_pvRequest.withPosition(m_setPosition));
+        m_hood.setControl(m_pvRequest.withPosition(m_setPosition));
     }
 
     public void setVelocity(double velocity) {
@@ -79,10 +81,11 @@ public class Shooter extends SubsystemBase {
     }
 
     public void stopHood() {
-        m_hood.stopMotor();
+        setPosition(getPosition());
     }
 
     public void stopRoller() {
+        m_setVelocity = 0.0;
         m_roller.stopMotor();
     }
 
@@ -101,7 +104,7 @@ public class Shooter extends SubsystemBase {
             setPosition(pose);
             setVelocity(velocity);
         }, ()-> {
-            stopHood();
+            setPosition(0.0);
             stopRoller();
         });
     }
@@ -114,7 +117,7 @@ public class Shooter extends SubsystemBase {
         SmartDashboard.putNumber("Shooter Set Velocity", m_setVelocity);
 
         SmartDashboard.putNumber("Shooter Hood Stator Current", getHoodStatorCurrent());
-        SmartDashboard.putNumber("Shooter Hood Supply Current", getHoodSupplyCurent());
+        SmartDashboard.putNumber("Shooter Hood Supply Current", getHoodSupplyCurrent());
         SmartDashboard.putNumber("Shooter Roller Stator Current", getRollerStatorCurrent());
         SmartDashboard.putNumber("Shooter Roller Supply Current", getRollerSupplyCurrent());
 
@@ -148,7 +151,7 @@ public class Shooter extends SubsystemBase {
                 .withStatorCurrentLimitEnable(true)
                 .withSupplyCurrentLimitEnable(true));
 
-        config.apply(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast));
+        config.apply(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Brake));
 
         config.apply(new Slot0Configs()
                 .withKP(ShooterConstants.Hood.kP)
