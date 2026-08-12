@@ -81,7 +81,7 @@ public class Turret extends SubsystemBase {
 
     @Override
     public void periodic() {
-        m_motor.setControl(m_pvRequest
+        m_motor.setControl(m_pvRequest.withPosition(m_setpoint)
             .withFeedForward(Voltage.ofBaseUnits(m_feedForward.getAsDouble(), Volts)));
 
         SmartDashboard.putNumber("Turret Stator Current", getStatorCurrent());
@@ -152,9 +152,7 @@ public class Turret extends SubsystemBase {
             }
         }
 
-        if (Double.isNaN(best)) {
-            best = MathUtil.clamp(best, TurretConstants.kReverseLimit, TurretConstants.kForwardLimit);
-        }
+        best = MathUtil.clamp(best, TurretConstants.kReverseLimit, TurretConstants.kForwardLimit);
 
         return best;
     }
