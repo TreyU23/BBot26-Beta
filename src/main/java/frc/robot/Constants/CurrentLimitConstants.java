@@ -15,4 +15,10 @@ public class CurrentLimitConstants {
 
     public static final double kShooterRollerStator = 0.0;
     public static final double kShooterRollerSupply = 0.0;
+
+    public static final double kSpindexerStator = 0.0;
+    public static final double kSpindexerSupply = 0.0;
+
+    public static final double kKickerStator = 0.0;
+    public static final double kKickerSupply = 0.0;
 }
