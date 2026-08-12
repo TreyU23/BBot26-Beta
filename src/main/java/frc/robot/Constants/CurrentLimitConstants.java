@@ -4,6 +4,9 @@ public class CurrentLimitConstants {
     public static final double kDriveStator = 0.0;
     public static final double kDriveSupply = 0.0;
 
+    public static final double kSteerStator = 0.0;
+    public static final double kSteerSupply = 0.0;
+
     public static final double kIntakeArmStator = 0.0;
     public static final double kIntakeArmSupply = 0.0;
 
@@ -21,4 +24,7 @@ public class CurrentLimitConstants {
 
     public static final double kKickerStator = 0.0;
     public static final double kKickerSupply = 0.0;
+
+    public static final double kTurretStator = 0.0;
+    public static final double kTurretSupply = 0.0;
 }
