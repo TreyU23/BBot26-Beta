@@ -19,6 +19,7 @@ import static edu.wpi.first.units.Units.Volts;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -63,6 +64,10 @@ public class Turret extends SubsystemBase {
 
     public double getPosition() {
         return m_motor.getPosition().getValueAsDouble();
+    }
+
+    public Translation2d getTranslation() {
+        return TurretConstants.kTranlation;
     }
 
     public boolean atSetpoint() {

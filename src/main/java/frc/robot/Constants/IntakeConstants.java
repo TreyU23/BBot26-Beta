@@ -21,5 +21,6 @@ public class IntakeConstants {
     public static final double kG = 0.0;
     public static final double kS = 0.0;
 
-
+    public static final double kIntakePose = 0.0;
+    public static final double kIntakeVoltage = 0.0;
 }

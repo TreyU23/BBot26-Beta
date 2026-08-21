@@ -10,6 +10,7 @@ public class ShooterConstants {
     public static final InterpolatingDoubleTreeMap kVelocityFeedTable = new InterpolatingDoubleTreeMap();
 
     public static final InterpolatingDoubleTreeMap kTimeTable = new InterpolatingDoubleTreeMap();
+    public static final InterpolatingDoubleTreeMap kFeedTimeTable = new InterpolatingDoubleTreeMap();
     
     public class Hood {
         public static final int kMotorID = 12;
@@ -40,5 +41,7 @@ public class ShooterConstants {
         kVelocityFeedTable.put(0.0, 0.0);
 
         kTimeTable.put(0.0, 0.0);
+
+        kFeedTimeTable.put(0.0, 0.0);
     }
 }

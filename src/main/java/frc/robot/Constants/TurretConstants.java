@@ -1,5 +1,7 @@
 package frc.robot.Constants;
 
+import edu.wpi.first.math.geometry.Translation2d;
+
 public class TurretConstants {
     public static final int kMotorID = 16;
 
@@ -24,4 +26,6 @@ public class TurretConstants {
 
     public static final double kCRTTolerance = 0.0;
     public static final double kTolerance = 0.0;
+
+    public static final Translation2d kTranlation = new Translation2d(0,0);
 }

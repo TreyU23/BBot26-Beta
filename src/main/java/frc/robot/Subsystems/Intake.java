@@ -95,6 +95,13 @@ public class Intake extends SubsystemBase {
         }, () -> stopRoller());
     }
 
+    public Command zeroIntakeCmd() {
+        return runEnd(() -> m_arm.setVoltage(1.0), () -> {
+            stopArm();
+            m_arm.setPosition(0.0);
+        });
+    }
+
     @Override
     public void periodic() {
         SmartDashboard.putNumber("Intake Position", getPosition());
