@@ -42,7 +42,8 @@ public class RobotContainer {
   private final SmartShooter m_smartShooter = new SmartShooter(m_shooter, m_turret, m_drivetrain::getState,
       true);
   private final JumpIntake m_jumpIntake = new JumpIntake(m_intake);
-  private final FeedShooter m_feedShooter = new FeedShooter(m_spindexer, m_kicker, m_turret::atSetpoint);
+  private final FeedShooter m_feedShooter = new FeedShooter(m_spindexer, m_kicker, m_turret::atSetpoint,
+      m_smartShooter::dontFeed);
   private final ReverseFeeding m_reverseShooter = new ReverseFeeding(m_spindexer, m_kicker);
 
   private final SendableChooser<String> m_autoChooser;
@@ -69,7 +70,7 @@ public class RobotContainer {
     m_driverController.leftTrigger().whileTrue(m_smartShooter);
 
     m_driverController.rightTrigger()
-        .whileTrue(m_feedShooter.onlyWhile(m_smartShooter::isScheduled))
+        .whileTrue(m_feedShooter.onlyWhile(m_driverController.leftTrigger()::getAsBoolean))
         .onTrue(Commands.runOnce(() -> m_shooter.allowHood(true)))
         .onFalse(Commands.runOnce(() -> m_shooter.allowHood(false)));
 

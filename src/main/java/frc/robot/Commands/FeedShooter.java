@@ -14,11 +14,13 @@ public class FeedShooter extends Command {
     private final Kicker m_kicker;
 
     private final BooleanSupplier m_finishedMove;
+    private final BooleanSupplier m_dontFeedShooters;
 
-    public FeedShooter(Spindexer spindexer, Kicker kicker, BooleanSupplier turretAtTarget) {
+    public FeedShooter(Spindexer spindexer, Kicker kicker, BooleanSupplier turretAtTarget, BooleanSupplier dontFeed) {
         m_spindexer = spindexer;
         m_kicker = kicker;
         m_finishedMove = turretAtTarget;
+        m_dontFeedShooters = dontFeed;
         addRequirements(m_spindexer, m_kicker);
     }
 
@@ -30,9 +32,12 @@ public class FeedShooter extends Command {
 
     @Override
     public void execute() {
-        if (m_finishedMove.getAsBoolean()) {
+        if (m_finishedMove.getAsBoolean() && !m_dontFeedShooters.getAsBoolean()) {
             m_spindexer.setVoltage(SpindexerConstants.kRunVoltage);
             m_kicker.setVoltage(KickerConstants.kRunVoltage);
+        } else {
+            m_spindexer.stop();
+            m_kicker.stop();
         }
     }
 

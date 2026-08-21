@@ -39,14 +39,15 @@ public class Turret extends SubsystemBase {
 
     private static double m_setpoint = 0.0;
     private static double m_lastSetpoint = 0.0;
-    
+    private static boolean m_targetReachable = true;
+
     private DoubleSupplier m_feedForward;
 
     private EasyCRT m_easyCRT;
     private Angle m_CRTOutput = Rotations.of(0.0);
 
     public Turret(DoubleSupplier robotRotation) {
-        m_feedForward = ()-> (robotRotation.getAsDouble() * 1.1 / (2.0 * Math.PI) * TurretConstants.kV);
+        m_feedForward = () -> (robotRotation.getAsDouble() * 1.1 / (2.0 * Math.PI) * TurretConstants.kV);
 
         notSoEasyCRT();
         CANCoderConfigs();
@@ -71,12 +72,20 @@ public class Turret extends SubsystemBase {
     }
 
     public boolean atSetpoint() {
-        return MathUtil.isNear(m_setpoint, getPosition(), TurretConstants.kTolerance);
+        return m_targetReachable
+                && MathUtil.isNear(m_setpoint, getPosition(), TurretConstants.kTolerance);
     }
 
     public void setPosition(double Angle) {
-        m_setpoint = wrapAngle(Angle / (2.0 * Math.PI));
-        m_setpoint = chooseSetpoint(m_setpoint, m_lastSetpoint);
+        double wrappedSetpoint = wrapAngle(Angle / (2.0 * Math.PI));
+        SetpointSelection selection = selectSetpoint(
+                wrappedSetpoint,
+                m_lastSetpoint,
+                TurretConstants.kReverseLimit,
+                TurretConstants.kForwardLimit);
+
+        m_setpoint = selection.setpoint();
+        m_targetReachable = selection.reachable();
     }
 
     public void stop() {
@@ -87,19 +96,24 @@ public class Turret extends SubsystemBase {
     @Override
     public void periodic() {
         m_motor.setControl(m_pvRequest.withPosition(m_setpoint)
-            .withFeedForward(Voltage.ofBaseUnits(m_feedForward.getAsDouble(), Volts)));
+                .withFeedForward(Voltage.ofBaseUnits(m_feedForward.getAsDouble(), Volts)));
 
         SmartDashboard.putNumber("Turret Stator Current", getStatorCurrent());
         SmartDashboard.putNumber("Turret Supply Current", getSupplyCurrent());
         SmartDashboard.putNumber("Turret Position", getPosition());
         SmartDashboard.putNumber("Turret Setpoint", m_setpoint);
+        SmartDashboard.putBoolean("Turret Target Reachable", m_targetReachable);
 
-        SmartDashboard.putNumber("Turret Left CANCoder Position", m_leftCANCoder.getAbsolutePosition().getValueAsDouble());
-        SmartDashboard.putNumber("Turret Right CANCoder Position", m_rightCANCoder.getAbsolutePosition().getValueAsDouble());
+        SmartDashboard.putNumber("Turret Left CANCoder Position",
+                m_leftCANCoder.getAbsolutePosition().getValueAsDouble());
+        SmartDashboard.putNumber("Turret Right CANCoder Position",
+                m_rightCANCoder.getAbsolutePosition().getValueAsDouble());
         SmartDashboard.putNumber("Turret Left CANCoder Rel Position", m_leftCANCoder.getPosition().getValueAsDouble());
-        SmartDashboard.putNumber("Turret Right CANCoder Rel Position", m_rightCANCoder.getPosition().getValueAsDouble());
+        SmartDashboard.putNumber("Turret Right CANCoder Rel Position",
+                m_rightCANCoder.getPosition().getValueAsDouble());
 
         SignalLogger.writeDouble("Turret Setpoint", m_setpoint);
+        SignalLogger.writeBoolean("Turret Target Reachable", m_targetReachable);
 
         m_lastSetpoint = m_setpoint;
     }
@@ -139,27 +153,58 @@ public class Turret extends SubsystemBase {
     }
 
     public double chooseSetpoint(double wrappedSetpoint, double lastSetpoint) {
-        double best = Double.NaN;
-        double bestAbsErr = Double.POSITIVE_INFINITY;
+        return selectSetpoint(
+                wrappedSetpoint,
+                lastSetpoint,
+                TurretConstants.kReverseLimit,
+                TurretConstants.kForwardLimit).setpoint();
+    }
 
-        for (int k = -1; k <= 1; k++) {
-            double candidate = wrappedSetpoint + k;
+    static SetpointSelection selectSetpoint(
+            double wrappedSetpoint,
+            double lastSetpoint,
+            double reverseLimit,
+            double forwardLimit) {
+        double safeLastSetpoint = Double.isFinite(lastSetpoint) ? lastSetpoint : 0.0;
 
-            if (candidate < TurretConstants.kReverseLimit || candidate > TurretConstants.kForwardLimit)
-                continue;
-
-            double err = candidate - lastSetpoint;
-            double absErr = Math.abs(err);
-
-            if (absErr < bestAbsErr) {
-                bestAbsErr = absErr;
-                best = candidate;
-            }
+        if (!Double.isFinite(reverseLimit)
+                || !Double.isFinite(forwardLimit)
+                || reverseLimit > forwardLimit) {
+            return new SetpointSelection(safeLastSetpoint, false);
         }
 
-        best = MathUtil.clamp(best, TurretConstants.kReverseLimit, TurretConstants.kForwardLimit);
+        safeLastSetpoint = MathUtil.clamp(safeLastSetpoint, reverseLimit, forwardLimit);
+        if (!Double.isFinite(wrappedSetpoint)) {
+            return new SetpointSelection(safeLastSetpoint, false);
+        }
 
-        return best;
+        // Any equivalent turret angle is wrappedSetpoint plus an integer number of
+        // rotations. Determine the full integer range allowed by the soft limits rather
+        // than considering only -1, 0, and 1 rotations.
+        double minimumRotationOffset = Math.ceil(reverseLimit - wrappedSetpoint);
+        double maximumRotationOffset = Math.floor(forwardLimit - wrappedSetpoint);
+
+        if (minimumRotationOffset > maximumRotationOffset) {
+            // The requested field angle is outside the turret's reachable arc. Hold the
+            // last safe position and keep atSetpoint() false instead of sending NaN to
+            // the motor controller or treating the fallback as valid aim.
+            return new SetpointSelection(safeLastSetpoint, false);
+        }
+
+        double nearestRotationOffset = Math.rint(safeLastSetpoint - wrappedSetpoint);
+        double selectedRotationOffset = MathUtil.clamp(
+                nearestRotationOffset,
+                minimumRotationOffset,
+                maximumRotationOffset);
+        double selectedSetpoint = MathUtil.clamp(
+                wrappedSetpoint + selectedRotationOffset,
+                reverseLimit,
+                forwardLimit);
+
+        return new SetpointSelection(selectedSetpoint, true);
+    }
+
+    static record SetpointSelection(double setpoint, boolean reachable) {
     }
 
     public void CANCoderConfigs() {
@@ -177,7 +222,7 @@ public class Turret extends SubsystemBase {
     public void motorConfigs() {
         TalonFXConfigurator config = m_motor.getConfigurator();
 
-         config.apply(new CurrentLimitsConfigs()
+        config.apply(new CurrentLimitsConfigs()
                 .withStatorCurrentLimit(CurrentLimitConstants.kTurretStator)
                 .withSupplyCurrentLimit(CurrentLimitConstants.kTurretSupply)
                 .withStatorCurrentLimitEnable(true)
