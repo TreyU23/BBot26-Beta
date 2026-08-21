@@ -31,7 +31,7 @@ public class ShooterConstants {
         public static final double kS = 0.0;
     }
 
-    public void setUpDistanceTables() {
+    public static void setUpDistanceTables() {
         kPositionTable.put(0.0, 0.0);
 
         kVelocityTable.put(0.0, 0.0);

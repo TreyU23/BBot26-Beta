@@ -7,6 +7,7 @@ package frc.robot;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Command.InterruptionBehavior;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.Commands.DriveCommands;
 import frc.robot.Commands.FeedShooter;
@@ -38,10 +39,10 @@ public class RobotContainer {
   private final Command m_fieldRelativeDrive = DriveCommands.driveRequest(m_drivetrain,
       () -> m_driverController.getLeftY(),
       () -> m_driverController.getLeftX(), () -> m_driverController.getRightX(), () -> true);
-  private final SmartShooter m_smartShooter = new SmartShooter(m_shooter, m_turret, () -> m_drivetrain.getState(),
+  private final SmartShooter m_smartShooter = new SmartShooter(m_shooter, m_turret, m_drivetrain::getState,
       true);
   private final JumpIntake m_jumpIntake = new JumpIntake(m_intake);
-  private final FeedShooter m_feedShooter = new FeedShooter(m_spindexer, m_kicker, () -> m_turret.atSetpoint());
+  private final FeedShooter m_feedShooter = new FeedShooter(m_spindexer, m_kicker, m_turret::atSetpoint);
   private final ReverseFeeding m_reverseShooter = new ReverseFeeding(m_spindexer, m_kicker);
 
   private final SendableChooser<String> m_autoChooser;
@@ -67,7 +68,10 @@ public class RobotContainer {
 
     m_driverController.leftTrigger().whileTrue(m_smartShooter);
 
-    m_driverController.rightTrigger().whileTrue(m_feedShooter);
+    m_driverController.rightTrigger()
+        .whileTrue(m_feedShooter.onlyWhile(m_smartShooter::isScheduled))
+        .onTrue(Commands.runOnce(() -> m_shooter.allowHood(true)))
+        .onFalse(Commands.runOnce(() -> m_shooter.allowHood(false)));
 
     m_driverController.y().and(m_operatorController.y())
         .whileTrue(m_jumpIntake.withInterruptBehavior(InterruptionBehavior.kCancelSelf));
