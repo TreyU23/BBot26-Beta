@@ -19,6 +19,7 @@ public class FeedShooter extends Command {
         m_spindexer = spindexer;
         m_kicker = kicker;
         m_finishedMove = turretAtTarget;
+        addRequirements(m_spindexer, m_kicker);
     }
 
     @Override

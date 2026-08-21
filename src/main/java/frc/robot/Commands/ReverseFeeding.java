@@ -11,6 +11,7 @@ public class ReverseFeeding extends Command {
     public ReverseFeeding(Spindexer spindexer, Kicker kicker) {
         m_spindexer = spindexer;
         m_kicker = kicker;
+        addRequirements(m_spindexer, m_kicker);
     }
 
     @Override
