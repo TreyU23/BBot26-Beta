@@ -37,9 +37,9 @@ public class Turret extends SubsystemBase {
 
     private final PositionVoltage m_pvRequest = new PositionVoltage(0.0);
 
-    private static double m_setpoint = 0.0;
-    private static double m_lastSetpoint = 0.0;
-    private static boolean m_targetReachable = true;
+    private double m_setpoint = 0.0;
+    private double m_lastSetpoint = 0.0;
+    private boolean m_targetReachable = true;
 
     private DoubleSupplier m_feedForward;
 
@@ -47,7 +47,7 @@ public class Turret extends SubsystemBase {
     private Angle m_CRTOutput = Rotations.of(0.0);
 
     public Turret(DoubleSupplier robotRotation) {
-        m_feedForward = () -> (robotRotation.getAsDouble() * 1.1 / (2.0 * Math.PI) * TurretConstants.kV);
+        m_feedForward = () -> (-robotRotation.getAsDouble() * 1.1 / (2.0 * Math.PI) * TurretConstants.kV);
 
         notSoEasyCRT();
         CANCoderConfigs();
@@ -137,7 +137,7 @@ public class Turret extends SubsystemBase {
 
         m_easyCRT.getAngleOptional().ifPresent(mechAngle -> {
             SmartDashboard.putNumber("CRT Solve", mechAngle.magnitude());
-            m_CRTOutput = mechAngle;
+            m_CRTOutput = Rotations.of(mechAngle.in(Rotations) + TurretConstants.kStartingPoseOffset);
             SmartDashboard.putBoolean("CRT Set", true);
         });
 

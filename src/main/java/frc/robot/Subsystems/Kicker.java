@@ -21,7 +21,7 @@ public class Kicker extends SubsystemBase {
     private final VoltageOut m_voRequest = new VoltageOut(0.0);
     private final VelocityVoltage m_vvRequest = new VelocityVoltage(0.0);
 
-    private static double m_setpoint = 0.0;
+    private double m_setpoint = 0.0;
     
     public Kicker() {
         motorConfigs();

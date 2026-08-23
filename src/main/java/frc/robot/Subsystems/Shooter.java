@@ -24,10 +24,10 @@ public class Shooter extends SubsystemBase {
     private final PositionVoltage m_pvRequest = new PositionVoltage(0.0);
     private final VelocityVoltage m_vvRequest = new VelocityVoltage(0.0);
 
-    private static double m_setPosition = 0.0;
-    private static double m_setVelocity = 0.0;
+    private double m_setPosition = 0.0;
+    private double m_setVelocity = 0.0;
 
-    private static boolean m_allowHood = false;
+    private boolean m_allowHood = false;
 
     public Shooter() {
         hoodConfigs();

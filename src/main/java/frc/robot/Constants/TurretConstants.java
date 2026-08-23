@@ -27,5 +27,10 @@ public class TurretConstants {
     public static final double kCRTTolerance = 0.0;
     public static final double kTolerance = 0.0;
 
+    // Raw CRT solve reads ~0.25 rotations left of forward at power-on; this corrects it
+    // (90 degrees right) so straight-forward reads as 0.0 rotations. Flip the sign if the
+    // turret doesn't read 0.0 with the barrel pointed forward after zeroing.
+    public static final double kStartingPoseOffset = -0.25;
+
     public static final Translation2d kTranlation = new Translation2d(0,0);
 }

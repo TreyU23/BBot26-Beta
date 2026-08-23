@@ -26,8 +26,8 @@ public class Intake extends SubsystemBase {
 
     private final PositionVoltage m_pvRequest = new PositionVoltage(0.0);
 
-    private static double m_setPosition = 0.0;
-    private static double m_setVoltage = 0.0;
+    private double m_setPosition = 0.0;
+    private double m_setVoltage = 0.0;
 
     public Intake() {
         rollerConfigs();
